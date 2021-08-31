@@ -36,11 +36,11 @@ config_integration.trace_integrations(['requests'])
 
 # Logging
 logger = logging.getLogger(__name__)
-handler = AzureLogHandler(connection_string='InstrumentationKey=d85f53aa-b043-4297-985f-54a9fcc408ad')
+handler = AzureLogHandler(connection_string='InstrumentationKey=8a7a4181-c44e-4954-8701-8bb7879b0dc4')
 handler.setFormatter(logging.Formatter('%(traceId)s %(spanId)s %(message)s'))
 logger.addHandler(handler)
 # Logging custom Events 
-logger.addHandler(AzureEventHandler(connection_string='InstrumentationKey=d85f53aa-b043-4297-985f-54a9fcc408ad'))
+logger.addHandler(AzureEventHandler(connection_string='InstrumentationKey=8a7a4181-c44e-4954-8701-8bb7879b0dc4'))
 # Set the logging level
 logger.setLevel(logging.INFO)
 
@@ -48,13 +48,13 @@ logger.setLevel(logging.INFO)
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
 enable_standard_metrics=True,
-connection_string='InstrumentationKey=d85f53aa-b043-4297-985f-54a9fcc408ad')
+connection_string='InstrumentationKey=8a7a4181-c44e-4954-8701-8bb7879b0dc4')
 view_manager.register_exporter(exporter)
 
 # Tracing
 tracer = Tracer(
  exporter=AzureExporter(
-     connection_string='InstrumentationKey=d85f53aa-b043-4297-985f-54a9fcc408ad'),
+ connection_string='InstrumentationKey=8a7a4181-c44e-4954-8701-8bb7879b0dc4'),
  sampler=ProbabilitySampler(1.0),
 )
 
@@ -63,7 +63,7 @@ app = Flask(__name__)
 # Requests
 middleware = FlaskMiddleware(
  app,
- exporter=AzureExporter(connection_string="InstrumentationKey=d85f53aa-b043-4297-985f-54a9fcc408ad"),
+ exporter=AzureExporter(connection_string='InstrumentationKey=8a7a4181-c44e-4954-8701-8bb7879b0dc4'),
  sampler=ProbabilitySampler(rate=1.0)
 )
 
@@ -87,7 +87,10 @@ else:
     title = app.config['TITLE']
 
 # Redis Connection
-r = redis.Redis()
+r = redis.Redis() 
+
+
+
 
 # Change title to host name to demo NLB
 if app.config['SHOWHOST'] == "true":
@@ -139,13 +142,18 @@ def index():
 
             # Get current values
             vote1 = r.get(button1).decode('utf-8')
+            properties = {'custom_dimensions' : {'Cats Vote': vote1}}
+            logger.info('Cats Vote', extra=properties)
+
             vote2 = r.get(button2).decode('utf-8')
+            properties = {'custom_dimensions' : {'Dogs Vote': vote2}}
+            logger.info('Dogs Vote', extra=properties)
 
             # Return results
             return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
 
 if __name__ == "__main__":
     # comment line below when deploying to VMSS
-    # app.run() # local
+    app.run() # local
     # uncomment the line below before deployment to VMSS
-    app.run(host='0.0.0.0', threaded=True, debug=True) # remote
+    # app.run(host='0.0.0.0', threaded=True, debug=True) # remote
